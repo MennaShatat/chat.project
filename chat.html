@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PneumoAssist — Pneumonia Advisory System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0d12;
+    --bg-card: #111520;
+    --bg-input: #161b28;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --accent: #3b8ef5;
+    --accent-dim: rgba(59,142,245,0.12);
+    --accent-glow: rgba(59,142,245,0.25);
+    --success: #22c87a;
+    --success-dim: rgba(34,200,122,0.12);
+    --warning: #f5a623;
+    --warning-dim: rgba(245,166,35,0.12);
+    --danger: #f55353;
+    --danger-dim: rgba(245,83,83,0.12);
+    --text: #e8eaf0;
+    --text-muted: #7a8194;
+    --text-dim: #4a5068;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─ Header ─ */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 18px; height: 18px; }
+
+  .logo-text {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .status-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid rgba(34,200,122,0.25);
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ─ Main layout ─ */
+  .app-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ─ Sidebar ─ */
+  .sidebar {
+    width: 260px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 20px 16px;
+    gap: 6px;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+
+  .quick-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .quick-btn:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .quick-btn .q-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .q-blue { background: var(--accent-dim); }
+  .q-green { background: var(--success-dim); }
+  .q-orange { background: var(--warning-dim); }
+  .q-red { background: var(--danger-dim); }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  /* ─ Tab switcher ─ */
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px 0;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    padding: 8px 16px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ─ Main content area ─ */
+  .content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─ Chat panel ─ */
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+  .msg-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: msgIn 0.25s ease-out;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .avatar.bot {
+    background: var(--accent-dim);
+    border: 1px solid rgba(59,142,245,0.3);
+    color: var(--accent);
+  }
+
+  .avatar.user {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .bubble {
+    max-width: 600px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .msg-row.bot .bubble {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px 12px 12px 12px;
+    color: var(--text);
+  }
+
+  .msg-row.user .bubble {
+    background: var(--accent-dim);
+    border: 1px solid rgba(59,142,245,0.2);
+    border-radius: 12px 4px 12px 12px;
+    color: var(--text);
+  }
+
+  .bubble.typing {
+    display: flex; gap: 5px; align-items: center;
+    padding: 14px 16px;
+  }
+
+  .typing-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  .msg-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+
+  .msg-row.user .msg-time { text-align: right; }
+
+  /* Risk badge in messages */
+  .risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+  }
+
+  .risk-high { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(245,83,83,0.25); }
+  .risk-medium { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(245,166,35,0.25); }
+  .risk-low { background: var(--success-dim); color: var(--success); border: 1px solid rgba(34,200,122,0.25); }
+
+  /* ─ Input area ─ */
+  .input-area {
+    padding: 16px 32px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: rgba(59,142,245,0.4);
+  }
+
+  #chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    resize: none;
+    max-height: 120px;
+    min-height: 22px;
+    line-height: 1.5;
+  }
+
+  #chat-input::placeholder { color: var(--text-dim); }
+
+  .send-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    opacity: 0.5;
+  }
+
+  .send-btn.ready { opacity: 1; }
+  .send-btn:hover.ready { background: #5a9ff7; transform: scale(1.03); }
+  .send-btn svg { width: 16px; height: 16px; }
+
+  .mic-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: transparent;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: var(--text-muted);
+  }
+
+  .mic-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+  .mic-btn.listening {
+    background: var(--danger-dim);
+    border-color: rgba(245,83,83,0.5);
+    color: var(--danger);
+    animation: micPulse 1s ease-in-out infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,83,83,0.35); }
+    50% { box-shadow: 0 0 0 6px rgba(245,83,83,0); }
+  }
+
+  .mic-btn svg { width: 15px; height: 15px; }
+
+  .voice-status {
+    font-size: 11px;
+    color: var(--danger);
+    text-align: center;
+    padding: 4px 0 0;
+    min-height: 16px;
+    display: none;
+  }
+
+  .voice-status.active { display: block; }
+
+  .tts-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 3px 6px;
+    border-radius: 5px;
+    margin-top: 6px;
+    transition: all 0.15s;
+  }
+
+  .tts-btn:hover { color: var(--accent); background: var(--accent-dim); }
+  .tts-btn.speaking { color: var(--accent); }
+  .tts-btn svg { width: 12px; height: 12px; }
+
+  /* ─ Xray panel ─ */
+  .xray-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    display: none;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .xray-panel.active { display: flex; }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    margin-bottom: 12px;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-hover);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-card);
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: rgba(59,142,245,0.5);
+    background: var(--accent-dim);
+  }
+
+  .upload-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 12px;
+    background: var(--accent-dim);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .upload-zone h3 {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .upload-zone input { display: none; }
+
+  .xray-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .xray-preview-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: none;
+  }
+
+  .xray-preview-card.active { display: block; }
+
+  .preview-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .preview-img {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    background: #080b10;
+    display: block;
+  }
+
+  .symptom-section { }
+
+  .symptom-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .symptom-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .symptom-chip.selected {
+    background: var(--accent-dim);
+    border-color: rgba(59,142,245,0.35);
+    color: var(--accent);
+  }
+
+  .symptom-chip:hover:not(.selected) {
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+
+  .prob-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .prob-slider-wrap label {
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+    cursor: pointer;
+  }
+
+  .prob-val {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    width: 36px;
+    text-align: right;
+  }
+
+  .xray-predict-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .xray-predict-row label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .toggle-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  .toggle-opt {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toggle-opt.active-normal { background: var(--success-dim); border-color: rgba(34,200,122,0.3); color: var(--success); }
+  .toggle-opt.active-pneumonia { background: var(--danger-dim); border-color: rgba(245,83,83,0.3); color: var(--danger); }
+
+  .diagnose-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.2px;
+  }
+
+  .diagnose-btn:hover { background: #5a9ff7; }
+  .diagnose-btn:active { transform: scale(0.99); }
+
+  /* Result card */
+  .result-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: none;
+    animation: fadeUp 0.3s ease-out;
+  }
+
+  .result-card.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-header.high { background: var(--danger-dim); border-bottom: 1px solid rgba(245,83,83,0.2); }
+  .result-header.medium { background: var(--warning-dim); border-bottom: 1px solid rgba(245,166,35,0.2); }
+  .result-header.low { background: var(--success-dim); border-bottom: 1px solid rgba(34,200,122,0.2); }
+  .result-header.unknown { background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border); }
+
+  .result-risk-label {
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  .result-header.high .result-risk-label { color: var(--danger); }
+  .result-header.medium .result-risk-label { color: var(--warning); }
+  .result-header.low .result-risk-label { color: var(--success); }
+
+  .result-score-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+  }
+
+  .result-body { padding: 16px 20px; }
+
+  .result-confidence {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  .result-reasons { display: flex; flex-direction: column; gap: 6px; }
+
+  .reason-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .reason-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  /* ─ Empty state ─ */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    gap: 12px;
+    padding: 40px;
+  }
+
+  .empty-icon {
+    width: 56px; height: 56px;
+    background: var(--accent-dim);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .empty-state h2 { font-size: 17px; font-weight: 500; }
+  .empty-state p { font-size: 13px; color: var(--text-muted); max-width: 360px; line-height: 1.6; }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .sug-chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sug-chip:hover {
+    border-color: rgba(59,142,245,0.4);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ─ Disclaimer bar ─ */
+  .disclaimer {
+    padding: 8px 32px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#3b8ef5" stroke-width="1.8">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/>
+        <path d="M12 8v4l3 3"/>
+        <circle cx="12" cy="12" r="3" fill="rgba(59,142,245,0.2)"/>
+      </svg>
+    </div>
+    <span class="logo-text">Pneumo<span>Assist</span></span>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    System Active
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-label">Quick Topics</div>
+
+    <button class="quick-btn" onclick="sendQuick('What is pneumonia?')">
+      <div class="q-icon q-blue">📋</div>
+      Definition
+    </button>
+    <button class="quick-btn" onclick="sendQuick('What are the symptoms of pneumonia?')">
+      <div class="q-icon q-orange">🌡</div>
+      Symptoms
+    </button>
+    <button class="quick-btn" onclick="sendQuick('When should I go to the ER?')">
+      <div class="q-icon q-red">🚨</div>
+      Emergency signs
+    </button>
+    <button class="quick-btn" onclick="sendQuick('How is pneumonia treated?')">
+      <div class="q-icon q-green">💊</div>
+      Treatment
+    </button>
+    <button class="quick-btn" onclick="sendQuick('How can I prevent pneumonia?')">
+      <div class="q-icon q-green">🛡</div>
+      Prevention
+    </button>
+    <button class="quick-btn" onclick="sendQuick('How long does recovery take?')">
+      <div class="q-icon q-blue">📅</div>
+      Recovery
+    </button>
+    <button class="quick-btn" onclick="sendQuick('Is pneumonia contagious?')">
+      <div class="q-icon q-orange">🔬</div>
+      Contagion
+    </button>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-label">Risk Groups</div>
+
+    <button class="quick-btn" onclick="sendQuick('What are the risk factors for pneumonia?')">
+      <div class="q-icon q-orange">⚠</div>
+      Risk factors
+    </button>
+    <button class="quick-btn" onclick="sendQuick('How does pneumonia affect older adults?')">
+      <div class="q-icon q-blue">👴</div>
+      Older adults
+    </button>
+    <button class="quick-btn" onclick="sendQuick('Pneumonia in children — when to seek care?')">
+      <div class="q-icon q-blue">👶</div>
+      Pediatric
+    </button>
+    <button class="quick-btn" onclick="sendQuick('What is walking pneumonia?')">
+      <div class="q-icon q-green">🚶</div>
+      Walking pneumonia
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+    <!-- Tabs -->
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">Chat Assistant</button>
+      <button class="tab-btn" id="tab-xray" onclick="switchTab('xray')">X-Ray Diagnosis</button>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel" id="panel-chat">
+      <div class="messages" id="messages">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3b8ef5" stroke-width="1.8">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
+          <h2>Ask me about pneumonia</h2>
+          <p>I can help you understand symptoms, warning signs, treatment options, and when to seek medical care.</p>
+          <div class="suggestion-chips">
+            <span class="sug-chip" onclick="sendQuick('What are the symptoms of pneumonia?')">What are the symptoms?</span>
+            <span class="sug-chip" onclick="sendQuick('When should I call a doctor?')">When to call a doctor?</span>
+            <span class="sug-chip" onclick="sendQuick('What is the difference between bacterial and viral pneumonia?')">Bacterial vs viral?</span>
+            <span class="sug-chip" onclick="sendQuick('Can I treat pneumonia at home?')">Home care tips?</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrap">
+          <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Hold to speak">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <textarea id="chat-input" placeholder="Ask a question about pneumonia..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this); checkReady()"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="voice-status" id="voice-status">Listening... speak now</div>
+      </div>
+
+      <div class="disclaimer">
+        ⚕ For educational purposes only — not a substitute for professional medical advice
+      </div>
+    </div>
+
+    <!-- X-Ray Panel -->
+    <div class="xray-panel" id="panel-xray">
+
+      <div>
+        <div class="section-title">Upload X-Ray Image (optional)</div>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+          ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)" ondrop="handleDrop(event)">
+          <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)">
+          <div class="upload-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b8ef5" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <h3>Drop X-ray image here</h3>
+          <p>Supports PNG, JPG, DICOM-preview — or skip for symptom-only analysis</p>
+        </div>
+      </div>
+
+      <div class="xray-grid">
+        <div class="xray-preview-card" id="preview-card">
+          <div class="preview-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Uploaded X-Ray
+          </div>
+          <img id="preview-img" class="preview-img" src="" alt="X-ray preview">
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;">
+          <div class="section-title">CV Model Output</div>
+
+          <div class="xray-predict-row" style="margin-bottom: 16px;">
+            <label>Prediction:</label>
+            <div class="toggle-btns">
+              <div class="toggle-opt active-normal" id="opt-normal" onclick="setPrediction('normal')">Normal</div>
+              <div class="toggle-opt" id="opt-pneumonia" onclick="setPrediction('pneumonia')">Pneumonia</div>
+            </div>
+          </div>
+
+          <div class="prob-slider-wrap">
+            <label>Model confidence:</label>
+            <input type="range" id="prob-slider" min="0" max="100" value="72" step="1" oninput="updateProb(this.value)">
+            <span class="prob-val" id="prob-display">72%</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Reported Symptoms</div>
+        <div class="symptom-chips" id="symptom-chips">
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Shortness of breath</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Chest pain</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">High fever</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Difficulty breathing</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Cough</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Fatigue</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Confusion</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Bluish lips</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Chills</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Fever</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Wheezing</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Rapid breathing</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Coughing blood</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Sweating</div>
+          <div class="symptom-chip" onclick="toggleSymptom(this)">Loss of appetite</div>
+        </div>
+      </div>
+
+      <button class="diagnose-btn" onclick="runDiagnosis()">Run Diagnosis Analysis</button>
+
+      <div class="result-card" id="result-card">
+        <div class="result-header" id="result-header">
+          <div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">Risk Level</div>
+            <div class="result-risk-label" id="result-risk-label">—</div>
+          </div>
+          <div class="result-score-badge" id="result-score-badge">Score: —</div>
+        </div>
+        <div class="result-body">
+          <div class="result-confidence" id="result-confidence"></div>
+          <div class="result-reasons" id="result-reasons"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const INTENTS = {"intents":[{"tag":"best_doctor_delta_university","patterns":["مين افضل دكتوره في الجامعه","مين احسن دكتوره في الجامعه","افضل دكتوره في جامعه الدلتا مين","مين افضل دكتور في جامعه الدلتا","best doctor in delta university","who is the best doctor in the university","who is the best professor in delta university","meen afdal doktora fel game3a","meen ahsan doktora fe gamet el delta","best female doctor in delta university","who is the top doctor at delta university","afdal doktora fi game3et el delta","best doctor at the university","who is best doctor in my university","tell me the best doctor in delta uni","who is number one doctor in delta university","who is the greatest doctor in the university","which doctor is best at delta university","top rated professor at delta university","recommend a good doctor at delta university"],"responses":["Dr. Samia is widely considered the best doctor at Delta University; many students say she is like a mother to them.","Many students at Delta University highly recommend Dr. Samia for her excellent teaching and caring, motherly approach.","Dr. Samia is the top-rated professor at Delta University. She is known for treating her students with great care."]},{"tag":"greeting_general","patterns":["Hi","Hello","Hey","Good morning","Good afternoon","Good evening","hello how are you","Hi bot","Hello assistant","Can we start?","I need help","I want to ask something","Are you there?","Can you help me?","Let us begin","I have a question","Can we talk?","I need guidance","Start please","Hello, can we chat?","Greetings to you"],"responses":["Hello! I can provide general education about pneumonia, symptoms, and triage guidance. How can I help?","Hi there! I'm here to help you understand pneumonia symptoms, warning signs, and when to seek care.","Welcome. You can ask me any pneumonia-related question, from prevention to emergency warning signs."]},{"tag":"greeting_casual","patterns":["Yo","Sup","What is up?","Hey buddy","Hey doc bot","Hiya","Morning","Evening","How is it going?","Quick question","Need quick help","Got a concern","Can I ask real quick?","Hey, got a minute?","Yo assistant","Help me out","Hey quick one","Hi quick question","Can you guide me?","Let us do this"],"responses":["Hey! Ask your pneumonia question and I'll keep the answers clear and practical.","Sure, go ahead! I can explain warning signs and help you understand when to seek medical care.","Absolutely. Share your concerns, and I will give you safe, educational guidance."]},{"tag":"greeting_formal","patterns":["Good day","Greetings","Pleasure to meet you","I would like assistance","I require medical education guidance","Could you assist me?","May I ask a question?","I seek information about pneumonia","Please assist me","Kindly help me","Hello, I need structured guidance","Can you provide an overview?","I would like to begin consultation questions","Could we begin?","Good to connect","I need professional guidance","Please provide support","I have several questions","May we proceed?","Good evening, I need advice"],"responses":["Greetings. I provide structured, general education on pneumonia and triage boundaries. How may I assist you?","Certainly. Please share your question, and I will respond with clear, safety-focused educational guidance.","Thank you for reaching out. I can assist with explaining symptoms, emergency red flags, and prevention."]},{"tag":"greeting_checkin","patterns":["Can we start with basics?","Start with an overview","What can you help with?","How should I use this assistant?","What topics do you cover?","Give me a quick menu","What can I ask you?","How do we begin?","Show me options","What is the first step?","Where should I start?","Can you guide the conversation?","I am not sure what to ask first","Help me structure my questions","Give me starting points","What are common questions?","Can you list key topics?","What do you do exactly?","Tell me your capabilities","How can you support me?"],"responses":["You can ask me about: definition, symptoms, emergency signs, risk factors, tests, treatment principles, recovery, and prevention.","A good starting point is asking: What symptoms are concerning? When should I call a doctor vs ER? What care is safe at home?","I provide general education and triage guidance. Tell me your first concern, and I will guide you step by step."]},{"tag":"pneumonia_disclaimer_general","patterns":["Can you explain your medical limits?","Are you a real doctor?","Can you diagnose me?","Is this actual medical advice?","What should I know about this assistant?","Please clarify your limitations","Can you prescribe medicine?","How accurate is your diagnosis?","Do you replace a doctor?","What is the medical disclaimer?","Can I trust you to tell me what I have?","Should I see a doctor instead?","Explain the safety limits of this chat","Are you allowed to diagnose?","What can't you do medically?","Give me a plain-English guide to your limits","Are you a licensed physician?","What are key points on your medical limits?","Can you walk me through your limitations?","Should I rely solely on your advice?"],"responses":["I provide general education about pneumonia, not personalized medical diagnosis or treatment.","I cannot confirm what illness you have, prescribe medicines, or replace a clinical exam.","Use this chat to understand symptoms and triage boundaries. For personal medical decisions, always contact a licensed clinician."]},{"tag":"pneumonia_disclaimer_emergency","patterns":["What are the emergency signs?","When is it a medical emergency?","What are urgent warning signs?","Should I go to the ER now?","Danger signs to watch out for?","Is this an emergency?","When should I call 911?","What symptoms mean I need an ambulance?","Tell me the critical warning signs","How do I know if it's life-threatening?","What are the red flags for urgent care?","When is immediate help needed?","Are blue lips an emergency?","I can't breathe, is that an emergency?","Signs of dangerous pneumonia?","Emergency warning signs of pneumonia?","Critical symptoms to watch?","What are life-threatening signs?","How urgent is chest pain with fever?","Should I wait or go to hospital?"],"responses":["Call emergency services immediately for severe trouble breathing, blue lips, severe chest pain, confusion, or fainting.","Do not delay urgent care while waiting for online advice. If you feel unsafe or are struggling to breathe, go to the ER.","Rapid worsening, inability to speak full sentences, or sudden confusion in older adults are high-risk warning signs requiring immediate emergency care."]},{"tag":"pneumonia_definition_plain_language","patterns":["What is pneumonia?","Define pneumonia","Explain pneumonia to me","What does pneumonia mean?","Tell me about pneumonia","pneumonia definition","What exactly is pneumonia?","Give me a simple explanation of pneumonia","What is pneumonia in simple terms?","Can you explain what pneumonia is?","What happens when you have pneumonia?","What is pneumonia and how does it affect you?","How would you describe pneumonia?","What does it mean to have pneumonia?","Is pneumonia a lung disease?","Describe pneumonia briefly","What is pneumonia in layman terms?","Describe what pneumonia is","What does pneumonia do to you?","Give me an overview of pneumonia"],"responses":["Pneumonia is an infection or inflammation of the lungs that affects the tiny air sacs (alveoli), making them fill with fluid or pus.","It's a serious lung infection that makes breathing difficult and often causes a cough with phlegm, fever, and chills.","In simple terms, pneumonia inflames your lung tissue, dropping oxygen transfer and causing heavy, difficult breathing."]},{"tag":"pneumonia_symptoms_common","patterns":["What are the symptoms of pneumonia?","Symptoms of pneumonia","Signs of pneumonia","How do I know if I have pneumonia?","Pneumonia symptoms list","Common symptoms","What does pneumonia feel like?","What are typical pneumonia symptoms?","List the symptoms","Signs and symptoms of pneumonia","Tell me what symptoms to look for","How does pneumonia present?","What should I watch for?","Symptoms to watch for in pneumonia","Is cough a sign of pneumonia?","Does pneumonia cause fever?","What are usual signs?","Pneumonia warning symptoms","Key signs of pneumonia","Recognize pneumonia symptoms"],"responses":["Common symptoms include persistent cough (often with phlegm), high fever, chills, shortness of breath, and chest pain when breathing.","Watch for a worsening cough, fever above 38°C (100.4°F), fatigue, and difficulty breathing even at rest.","Key warning signs: rapid or labored breathing, high fever, a productive cough, and feeling unusually weak or confused."]},{"tag":"pneumonia_when_call_doctor","patterns":["When should I call a doctor?","When to see a doctor?","Should I see a doctor?","Do I need a doctor?","When to call a physician","How do I know if I should see a doctor?","At what point do I need medical help?","Is this serious enough for a doctor?","Should I visit a clinic?","When do I need to call my GP?","When should I seek medical attention?","When is it time to see a doctor?","Should I go to urgent care?","Mild symptoms, should I still call?","When to seek help for fever?","Doctor or ER?","Call doctor or wait?","Need medical advice, when?","When is professional help needed?","When do I get checked out?"],"responses":["Call your doctor if you have a fever above 38.5°C, a worsening cough lasting more than 3 days, or breathing that feels harder than usual.","Seek medical advice if symptoms do not improve after 2-3 days of rest, or if you belong to a high-risk group like the elderly or immunocompromised.","If you feel your breathing is notably worse, your fever is rising, or you feel generally deteriorating, call a clinician today rather than waiting."]},{"tag":"pneumonia_when_er","patterns":["When to go to the emergency room?","ER or urgent care?","Should I go to hospital?","When is it a hospital situation?","Emergency room or home?","When to go to the ER for pneumonia?","Is this ER-worthy?","Do I need to go to the ER right now?","When is hospitalization needed?","Urgent care or ER?","Is chest pain an ER visit?","High fever with breathing trouble, ER?","When to take someone to hospital?","Should I call an ambulance?","When to rush to hospital?","Hospital or wait it out?","This seems serious, should I go now?","Can I wait or do I need ER?","Is it safe to wait?","Emergency department for pneumonia?"],"responses":["Go to the ER immediately if you have blue lips or fingertips, confusion, extreme difficulty breathing, or a fever above 40°C.","Seek emergency care if the person cannot complete a full sentence due to breathlessness, or if an infant or elderly person has rapid, labored breathing.","A pulse oximeter reading below 92% oxygen saturation is an emergency sign. Do not wait — go directly to the emergency department."]},{"tag":"pneumonia_treatment_principles","patterns":["How is pneumonia treated?","Treatment for pneumonia","What is the treatment?","Pneumonia treatment options","How do doctors treat pneumonia?","What medications treat pneumonia?","Treatment approach for pneumonia","How is pneumonia managed?","What medicine is used for pneumonia?","What antibiotics treat pneumonia?","Treatment plan for pneumonia","How do you get rid of pneumonia?","Medical treatment of pneumonia","Pneumonia medicine","What is prescribed for pneumonia?","How does the doctor treat it?","What treatment should I expect?","Treatment options for pneumonia","What helps pneumonia go away?","Medical management of pneumonia"],"responses":["Bacterial pneumonia is treated with antibiotics prescribed by a doctor. Viral pneumonia is managed with rest, fluids, and sometimes antivirals.","Treatment depends on the cause: antibiotics for bacterial, supportive care for viral, and antifungals for fungal pneumonia.","A doctor will determine the right treatment after tests. Do not self-prescribe antibiotics — misuse can worsen outcomes."]},{"tag":"pneumonia_prevention_vaccines_general","patterns":["How can I prevent pneumonia?","Pneumonia prevention","How to avoid pneumonia?","Ways to prevent pneumonia","Pneumonia vaccine","Should I get vaccinated?","Is there a pneumonia vaccine?","How do I protect myself?","Steps to prevent pneumonia","Reduce risk of pneumonia","Prevention tips for pneumonia","How to lower risk of getting pneumonia?","Vaccine for lung infection","Protect lungs from pneumonia","Can pneumonia be prevented?","How do I stay safe from pneumonia?","What reduces pneumonia risk?","Immunization for pneumonia","Does flu shot help?","What can I do to not get pneumonia?"],"responses":["Vaccination is the most effective prevention: the pneumococcal vaccine covers the most common bacterial cause, and the flu vaccine reduces post-viral pneumonia risk.","Wash hands regularly, avoid smoking, manage chronic illnesses, and stay up to date on vaccinations — especially if you are over 65 or immunocompromised.","Good respiratory hygiene (covering coughs, avoiding close contact with sick people) and a strong immune system from sleep and nutrition help reduce risk."]},{"tag":"pneumonia_recovery_timeline_general","patterns":["How long does recovery take?","Recovery time for pneumonia","How long to recover?","Pneumonia recovery","When will I feel better?","How long does pneumonia last?","Recovery from pneumonia","Timeline for pneumonia recovery","How many days to recover?","How long are you sick with pneumonia?","When do symptoms resolve?","Duration of pneumonia","Pneumonia healing time","How long to get back to normal?","When can I go back to work?","Typical recovery period","How many weeks does pneumonia last?","Is recovery fast or slow?","How fast does pneumonia clear?","What is the usual duration?"],"responses":["Most healthy adults improve within 1–3 weeks with proper treatment, though fatigue may linger 4–6 weeks.","Recovery varies: mild cases resolve in 1–2 weeks; severe cases requiring hospitalization may take 4–8 weeks.","You may feel well enough to resume light activity after 1 week, but full lung recovery can take a month or more — do not rush it."]},{"tag":"pneumonia_contagious_questions","patterns":["Is pneumonia contagious?","Can I catch pneumonia?","Can I spread pneumonia?","How is pneumonia spread?","Is it infectious?","Can I give someone pneumonia?","Transmission of pneumonia","How does pneumonia spread?","Am I contagious with pneumonia?","Should I isolate?","Is pneumonia passed person to person?","Risk of spreading pneumonia","Airborne transmission?","Is it catching?","Does pneumonia spread through air?","Can I be around others?","Should I stay home?","Pneumonia and infection control","Can someone catch it from me?","Do I need to quarantine?"],"responses":["Some types of pneumonia are contagious — mainly those caused by bacteria or viruses that spread through respiratory droplets when coughing or sneezing.","Viral and some bacterial pneumonias can spread. Cover your mouth, wash hands, and avoid close contact while symptomatic.","Not all pneumonias are equally contagious. Aspiration pneumonia, for example, is not infectious. A doctor can advise on your specific isolation needs."]},{"tag":"pneumonia_risk_factors_general","patterns":["What are the risk factors for pneumonia?","Who is at risk?","Risk factors","Who gets pneumonia?","Am I at risk?","High-risk groups for pneumonia","Who is most vulnerable?","What makes you prone to pneumonia?","Risk groups for pneumonia","Pneumonia risk factors list","Who should worry about pneumonia?","Factors that increase pneumonia risk","Who is most likely to get pneumonia?","Predisposing factors","Who needs to be careful?","Who gets it more often?","Why are some people more at risk?","Susceptibility to pneumonia","Population at higher risk","What conditions raise the risk?"],"responses":["High-risk groups include adults over 65, young children under 5, smokers, and people with chronic lung disease, diabetes, or weakened immune systems.","Hospitalization, recent surgery, or being on a ventilator significantly raises pneumonia risk due to exposure and reduced lung clearance.","Underlying conditions like COPD, heart failure, HIV, and long-term steroid use all impair lung defenses and increase pneumonia susceptibility."]},{"tag":"pneumonia_walking_pneumonia_mycoplasma","patterns":["What is walking pneumonia?","Walking pneumonia","Atypical pneumonia","Mycoplasma pneumonia","Mild pneumonia that lets you walk?","Can you walk around with pneumonia?","What is atypical pneumonia?","Walking around with pneumonia","Not bed-ridden pneumonia","What is mild pneumonia?","Is it possible to have pneumonia and not know it?","Ambulatory pneumonia","What are the signs of walking pneumonia?","Can I still be active with pneumonia?","Pneumonia you can function with","Is walking pneumonia serious?","Pneumonia but still moving around","Subclinical pneumonia","Mild lung infection","I might have walking pneumonia"],"responses":["Walking pneumonia is a mild form usually caused by Mycoplasma pneumoniae. Symptoms are milder — gradual onset, mild fever, prolonged dry cough — allowing daily activity.","Despite being called 'walking' pneumonia, it still requires treatment and rest. Left unmanaged, it can worsen, especially in older adults or those with chronic illness.","It is commonly seen in school-age children and young adults. It spreads easily in close contact settings like classrooms and dorms."]},{"tag":"pneumonia_breathing_exercises","patterns":["Breathing exercises for pneumonia","Can breathing exercises help?","How to improve breathing?","Exercises to help lungs","Lung recovery exercises","Breathing techniques for recovery","Help my lungs recover","Respiratory exercises","Deep breathing pneumonia","How to strengthen lungs?","Breathing exercises during recovery","Can I do breathing exercises?","Lung expansion exercises","Diaphragmatic breathing pneumonia","Breathing drills to help","Recovery breathing tips","How to open up my lungs?","Pursed lip breathing","Breathing therapy","Can I do breathing techniques at home?"],"responses":["Deep diaphragmatic breathing and pursed-lip breathing can help re-expand lung tissue and clear mucus during recovery. A physiotherapist can guide technique.","Incentive spirometry — slow, deep inhales through a device — is often used in hospital recovery to expand lung segments and prevent complications.","Avoid strenuous exercise. Gentle, controlled deep breathing while sitting upright helps without overloading weakened lung tissue."]},{"tag":"pneumonia_hospitalization_criteria","patterns":["When is hospitalization needed?","Do I need to be hospitalized?","Hospital admission criteria","When do you get admitted for pneumonia?","Is my pneumonia serious enough for hospital?","Will I need to stay in hospital?","Inpatient vs outpatient pneumonia","When is home treatment not enough?","ICU for pneumonia?","Severe pneumonia criteria","Hospital stay for pneumonia","When do doctors admit for pneumonia?","How do they decide to hospitalize?","Criteria for pneumonia admission","How bad does it have to be for hospital?","What determines if I'm admitted?","Is severe pneumonia always admitted?","Who gets hospitalized for pneumonia?","When are you too sick to stay home?","Hospitalization threshold"],"responses":["Doctors use scoring tools like the PSI or CURB-65 to assess hospitalization need, factoring in age, confusion, urea, respiratory rate, and blood pressure.","You will likely be admitted if oxygen saturation drops below 92%, breathing rate is very high, or you cannot maintain hydration and oral medication intake.","ICU care is reserved for cases needing mechanical ventilation or hemodynamic support. Most pneumonia patients are treated and recover outside the ICU."]},{"tag":"pneumonia_mental_health_impact","patterns":["Pneumonia and mental health","Can pneumonia cause depression?","Mental health after pneumonia","Psychological effects of pneumonia","Anxiety after pneumonia","Depression after serious illness","Post-pneumonia emotional effects","Cognitive effects of pneumonia","Can pneumonia affect your mood?","I feel depressed after pneumonia","Is low mood normal after pneumonia?","Mental fog after pneumonia","Emotional recovery from pneumonia","Can severe illness cause trauma?","Anxiety after hospitalization","Long-term emotional effects","Pneumonia and brain fog","Is it normal to feel down after pneumonia?","Post-illness psychological effects","Pneumonia and PTSD"],"responses":["Post-illness fatigue and mood changes are common after pneumonia. The physical stress of serious infection can trigger temporary depression or anxiety.","If you were hospitalized or had ICU-level care, post-ICU syndrome — including PTSD, cognitive changes, and depression — is a recognized condition. Seek support.","Gradual improvement in mood usually follows physical recovery. If emotional symptoms persist beyond 4 weeks, consult your GP about mental health support."]}]};
+
+// ─── NLP Engine ───
+function tokenize(text) {
+  return new Set(text.toLowerCase().match(/[a-zA-Z']+/g) || []);
+}
+
+function matchIntent(userInput) {
+  const input = userInput.toLowerCase().trim();
+  // Exact/regex pattern match first
+  for (const intent of INTENTS.intents) {
+    for (const pattern of intent.patterns) {
+      const regex = new RegExp('\\b' + pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+      if (regex.test(input)) {
+        return intent;
+      }
+    }
+  }
+  // Token overlap fallback
+  const userTokens = tokenize(input);
+  let bestIntent = null;
+  let bestScore = 0;
+  for (const intent of INTENTS.intents) {
+    for (const pattern of intent.patterns) {
+      const pTokens = tokenize(pattern);
+      const overlap = [...userTokens].filter(t => pTokens.has(t)).length;
+      if (overlap > bestScore) {
+        bestScore = overlap;
+        bestIntent = intent;
+      }
+    }
+  }
+  if (bestScore >= 2) return bestIntent;
+  return null;
+}
+
+function getResponse(userInput) {
+  const intent = matchIntent(userInput);
+  if (intent) {
+    const responses = intent.responses;
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  return "I'm focused on pneumonia education. Could you rephrase, or ask about symptoms, treatment, prevention, or emergency signs?";
+}
+
+// ─── UI ───
+let cvPrediction = 'normal';
+
+function switchTab(tab) {
+  document.getElementById('panel-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+  document.getElementById('panel-xray').classList.toggle('active', tab === 'xray');
+  document.getElementById('tab-chat').classList.toggle('active', tab === 'chat');
+  document.getElementById('tab-xray').classList.toggle('active', tab === 'xray');
+}
+
+function now() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function hideEmpty() {
+  const el = document.getElementById('empty-state');
+  if (el) el.remove();
+}
+
+function appendMsg(text, role, withSpeak = false, extra = '') {
+  hideEmpty();
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const av = document.createElement('div');
+  av.className = `avatar ${role}`;
+  av.textContent = role === 'bot' ? '⚕' : 'U';
+
+  const col = document.createElement('div');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = text.replace(/\n/g, '<br>') + extra;
+
+  if (role === 'bot' && withSpeak) {
+    const ttsBtn = document.createElement('button');
+    ttsBtn.className = 'tts-btn';
+    ttsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`;
+    ttsBtn.onclick = () => speakText(text, ttsBtn);
+    bubble.appendChild(ttsBtn);
+    // Auto-speak if voice mode is active
+    if (voiceMode) speakText(text, ttsBtn);
+  }
+
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = now();
+
+  col.appendChild(bubble);
+  col.appendChild(time);
+  row.appendChild(av);
+  row.appendChild(col);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return bubble;
+}
+
+// ─── Voice Engine ───
+let recognition = null;
+let voiceMode = false;
+let currentUtterance = null;
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const speechSupported = !!SpeechRecognition;
+
+function toggleMic() {
+  if (!speechSupported) {
+    alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+    return;
+  }
+  if (recognition && voiceMode) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  // Stop any ongoing TTS first
+  window.speechSynthesis.cancel();
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
+
+  voiceMode = true;
+  document.getElementById('mic-btn').classList.add('listening');
+  document.getElementById('voice-status').classList.add('active');
+  document.getElementById('chat-input').placeholder = 'Listening...';
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('chat-input').value = transcript;
+    checkReady();
+    if (e.results[e.results.length - 1].isFinal) {
+      stopListening();
+      if (transcript.trim()) sendMessage();
+    }
+  };
+
+  recognition.onerror = (e) => {
+    console.warn('STT error:', e.error);
+    stopListening();
+  };
+
+  recognition.onend = () => stopListening();
+
+  recognition.start();
+}
+
+function stopListening() {
+  voiceMode = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('voice-status').classList.remove('active');
+  document.getElementById('chat-input').placeholder = 'Ask a question about pneumonia...';
+}
+
+function speakText(text, btn) {
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/<[^>]+>/g, '').replace(/\n/g, ' ');
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.lang = 'en-US';
+  utt.rate = 0.95;
+  utt.pitch = 1;
+
+  // Pick a good English voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => v.lang === 'en-US' && v.name.includes('Google'))
+    || voices.find(v => v.lang === 'en-US')
+    || voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utt.voice = preferred;
+
+  if (btn) {
+    btn.classList.add('speaking');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg> Stop`;
+    btn.onclick = () => { window.speechSynthesis.cancel(); resetTtsBtn(btn); };
+    utt.onend = () => resetTtsBtn(btn);
+    utt.onerror = () => resetTtsBtn(btn);
+  }
+
+  currentUtterance = utt;
+  window.speechSynthesis.speak(utt);
+}
+
+function resetTtsBtn(btn) {
+  btn.classList.remove('speaking');
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`;
+  btn.onclick = () => speakText(btn._text, btn);
+}
+
+function showTyping() {
+  hideEmpty();
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.id = 'typing-row';
+
+  const av = document.createElement('div');
+  av.className = 'avatar bot';
+  av.textContent = '⚕';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble typing';
+  bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-row');
+  if (t) t.remove();
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  appendMsg(text, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').classList.remove('ready');
+
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    const response = getResponse(text);
+    appendMsg(response, 'bot', true);
+  }, 600 + Math.random() * 500);
+}
+
+function sendQuick(text) {
+  const input = document.getElementById('chat-input');
+  input.value = text;
+  checkReady();
+  sendMessage();
+  switchTab('chat');
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function checkReady() {
+  const has = document.getElementById('chat-input').value.trim().length > 0;
+  document.getElementById('send-btn').classList.toggle('ready', has);
+}
+
+// ─── X-Ray ───
+function handleDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.toggle('dragover', over);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadPreview(file);
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) loadPreview(file);
+}
+
+function loadPreview(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('preview-img').src = ev.target.result;
+    document.getElementById('preview-card').classList.add('active');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setPrediction(val) {
+  cvPrediction = val;
+  document.getElementById('opt-normal').className = 'toggle-opt' + (val === 'normal' ? ' active-normal' : '');
+  document.getElementById('opt-pneumonia').className = 'toggle-opt' + (val === 'pneumonia' ? ' active-pneumonia' : '');
+}
+
+function updateProb(val) {
+  document.getElementById('prob-display').textContent = val + '%';
+}
+
+function toggleSymptom(el) {
+  el.classList.toggle('selected');
+}
+
+// ─── Diagnosis Engine (mirrors Diagnosis.py) ───
+const HIGH_RISK = new Set(["difficulty breathing","shortness of breath","chest pain","confusion","high fever","bluish lips","coughing blood"]);
+const MEDIUM_RISK = new Set(["cough","fever","fatigue","chills","sweating","loss of appetite","rapid breathing","wheezing"]);
+const ALIASES = {
+  "short breath":"shortness of breath","shortness of breath":"shortness of breath",
+  "breathing problem":"shortness of breath","cant breathe":"difficulty breathing",
+  "can't breathe":"difficulty breathing","hard to breathe":"difficulty breathing",
+  "difficulty breathing":"difficulty breathing","breathing difficulty":"difficulty breathing",
+  "chest pain":"chest pain","chest ache":"chest pain","chest tightness":"chest pain",
+  "tight chest":"chest pain","high fever":"high fever","fever":"fever",
+  "high temperature":"high fever","temperature":"fever","cough":"cough",
+  "coughing":"cough","dry cough":"cough","wet cough":"cough",
+  "coughing blood":"coughing blood","confusion":"confusion","confused":"confusion",
+  "bluish lips":"bluish lips","blue lips":"bluish lips","fatigue":"fatigue",
+  "tired":"fatigue","chills":"chills","sweating":"sweating",
+  "loss of appetite":"loss of appetite","no appetite":"loss of appetite",
+  "rapid breathing":"rapid breathing","fast breathing":"rapid breathing","wheezing":"wheezing"
+};
+
+function normalize(symptoms) {
+  return symptoms.map(s => ALIASES[s.toLowerCase()] || s.toLowerCase());
+}
+
+function xrayScore(prediction, probability, symCount) {
+  if (prediction !== 'pneumonia') return [0, 'X-ray appears normal — no pneumonia detected'];
+  let base, label;
+  if (probability >= 0.8) { base = 3; label = 'strongly suggests'; }
+  else if (probability >= 0.5) { base = 2; label = 'suggests possible'; }
+  else { base = 1; label = 'shows weak signal of'; }
+  const boost = symCount >= 3 ? 1 : 0;
+  const reason = `X-ray ${label} pneumonia (${Math.round(probability*100)}% confidence)` + (boost ? ' — boosted: multiple symptoms present' : '');
+  return [base + boost, reason];
+}
+
+function calcConfidence(score, symCount, hasXray) {
+  if (!hasXray && symCount === 0) return 'Very Low — no data provided';
+  if (!hasXray) return 'Low — based on symptoms only, no X-ray';
+  if (symCount === 0) return 'Medium — based on X-ray only, no symptoms reported';
+  if (symCount >= 3 && hasXray) return 'High — symptoms + X-ray both available';
+  return 'Medium — limited data';
+}
+
+function runDiagnosis() {
+  const selectedChips = [...document.querySelectorAll('.symptom-chip.selected')].map(c => c.textContent.trim().toLowerCase());
+  const normalized = normalize(selectedChips);
+
+  let score = 0;
+  const reasons = [];
+
+  for (const sym of normalized) {
+    if (HIGH_RISK.has(sym)) { score += 2; reasons.push(`High-risk symptom: "${sym}"`); }
+    else if (MEDIUM_RISK.has(sym)) { score += 1; reasons.push(`Symptom detected: "${sym}"`); }
+  }
+
+  const prob = parseInt(document.getElementById('prob-slider').value) / 100;
+  const [xPts, xReason] = xrayScore(cvPrediction, prob, normalized.length);
+  score += xPts;
+  reasons.push(xReason);
+
+  if (normalized.length === 0) reasons.push('No symptoms selected — result relies on X-ray only');
+
+  let risk, cls;
+  if (score >= 5) { risk = 'High Risk'; cls = 'high'; }
+  else if (score >= 3) { risk = 'Medium Risk'; cls = 'medium'; }
+  else if (score > 0) { risk = 'Low Risk'; cls = 'low'; }
+  else { risk = 'Unknown'; cls = 'unknown'; }
+
+  const confidence = calcConfidence(score, normalized.length, true);
+
+  const header = document.getElementById('result-header');
+  header.className = `result-header ${cls}`;
+  document.getElementById('result-risk-label').textContent = risk;
+  document.getElementById('result-score-badge').textContent = `Score: ${score}`;
+  document.getElementById('result-confidence').textContent = `Confidence: ${confidence}`;
+
+  const reasonsEl = document.getElementById('result-reasons');
+  reasonsEl.innerHTML = reasons.map(r => `<div class="reason-item"><div class="reason-dot"></div><span>${r}</span></div>`).join('');
+
+  const card = document.getElementById('result-card');
+  card.classList.remove('active');
+  void card.offsetWidth;
+  card.classList.add('active');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Boot message
+setTimeout(() => {
+  appendMsg("Hello! I'm PneumoAssist — your pneumonia education assistant. I can help you understand symptoms, warning signs, treatment principles, and when to seek care.\n\nWhat would you like to know?", 'bot', true);
+  // Preload voices
+  window.speechSynthesis.getVoices();
+}, 400);
+</script>
+</body>
+</html>
